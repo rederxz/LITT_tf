@@ -42,7 +42,11 @@ def psnr(img_ref, img, complex_input=False):  # FIXME: complex PSNR calculation?
 def ssim(img_1, img_2, complex_input=False):
     if not complex_input:
         img_1, img_2 = r2c(img_1), r2c(img_2)
-    return tf.image.ssim(tf.math.abs(img_1), tf.math.abs(img_2))
+    img_1 = tf.transpose(img_1, [1, 0, 2, 3])
+    img_2 = tf.transpose(img_2, [1, 0, 2, 3])
+    print(img_1.shape)
+    mean_ssim = tf.reduce_mean([tf.image.ssim(tf.math.abs(img_1[i]), tf.math.abs(img_2[i]), max_val=1.0) for i in range(img_1.shape[0])])
+    return mean_ssim
 
 
 class Learner(Model):

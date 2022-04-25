@@ -107,7 +107,9 @@ def mask_ds_from_file(data_dir,
 
 def mask_ds_from_gen(gen):
     """for training"""
-    mask_ds = tf.data.Dataset.from_generator(gen, output_types=tf.float32)
+    mask_ds = tf.data.Dataset.from_generator(
+        gen,
+        output_signature=tf.TensorSpec(shape=(None, None, None), dtype=tf.float32))
 
     return mask_ds
 
@@ -117,18 +119,17 @@ def prepare(ds_img,
             batch_size=1,
             transform=None,
             shuffle=False):
+    if shuffle:
+        ds_img = ds_img.shuffle(len(ds_img), reshuffle_each_iteration=True)  # a large enough buffer size is required
+
     ds = tf.data.Dataset.zip((ds_img, ds_mask))
 
     if transform:
         ds = ds.map(lambda img, mask: transform(img, mask), num_parallel_calls=tf.data.AUTOTUNE)
 
-    if shuffle:
-        ds = ds.shuffle(len(ds))  # a large enough buffer size is required
-
     ds = ds.batch(batch_size)
 
     return ds.prefetch(buffer_size=tf.data.AUTOTUNE)
-
 
 # def make_LITT_dataset(data_dir,
 #                       split,

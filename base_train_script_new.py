@@ -1,3 +1,7 @@
+import sys
+sys.path.append('LITT_tf')
+
+import tensorflow as tf
 from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.optimizers.schedules import CosineDecay
 from toolz import curry
@@ -13,9 +17,10 @@ def transform(img, mask, training):
     if training:  # data manipulation
         img = cut_edge(img, (0, 32))
         mask = cut_edge(mask, (0, 32))
+    mask = tf.cast(mask, img.dtype) * (1 + 1j)
     img_u, k_u = under_sample(img, mask)  # under_sample
     img, img_u, k_u, mask = c2r(img), c2r(img_u), c2r(k_u), c2r(mask)  # to real
-    return img, img_u, k_u, mask
+    return (img_u, k_u, mask), img
 
 
 nt_network = 6
@@ -26,10 +31,10 @@ epochs = 200
 
 tpu = setup_tpu()
 
-ds_img_train = img_ds_from_file(data_dir='/root/LITT_data', split_dir='data/train', nt_network=nt_network)
+ds_img_train = img_ds_from_file(data_dir='LITT_data', split_dir='data_small/train', nt_network=nt_network)
 ds_mask_train = mask_ds_from_gen(cs_mask_gen(shape=[nt_network, 256, 256], acc=8.0, sample_n=8))
-ds_img_test = img_ds_from_file(data_dir='/root/LITT_data', split_dir='data/test', nt_network=nt_network)
-ds_mask_test = mask_ds_from_file(data_dir='/root/LITT_mask', split_dir='data/test', nt_network=nt_network)
+ds_img_test = img_ds_from_file(data_dir='LITT_data', split_dir='data_small/test', nt_network=nt_network)
+ds_mask_test = mask_ds_from_file(data_dir='LITT_mask_8x_c8', split_dir='data_small/test', nt_network=nt_network)
 
 ds_train = prepare(ds_img_train, ds_mask_train, batch_size=train_batch_size, transform=transform(training=True),
                    shuffle=True)
@@ -37,7 +42,7 @@ ds_test = prepare(ds_img_test, ds_mask_test, batch_size=test_batch_size, transfo
 
 with tpu.scope():
     model = CRNN()
-    model.build([(1, nt_network, 256, 256), (1, nt_network, 256, 256), (1, nt_network, 256, 256)])
+    model.build([(None, nt_network, 256, 256, 2), (None, nt_network, 256, 256, 2), (None, nt_network, 256, 256, 2)])
     model.summary()
 
     model.compile(

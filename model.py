@@ -62,7 +62,7 @@ class CRNN_t_i(Layer):
 
         # forward
         output = []
-        hidden_t = tf.zeros_like(hidden_i)
+        hidden_t = tf.zeros_like(hidden_i[0])
         for i in range(nt):  # past time frame
             hidden_t = self.act(
                 self.input2hidden(_input[i]) +
@@ -75,7 +75,7 @@ class CRNN_t_i(Layer):
         if not self.uni_direction:
             # backward
             output_b = []
-            hidden_t = tf.zeros_like(hidden_i)
+            hidden_t = tf.zeros_like(hidden_i[0])
             for i in range(nt):  # future time frame
                 hidden_t = self.act(
                     self.input2hidden(_input[nt - i - 1]) +
@@ -153,12 +153,10 @@ class CRNN(Model):
         """
         img, k, m = inputs
 
-        nb, nt, nx, ny, nc = img.shape
-
-        out_crnn_t_i = tf.zeros([nb, nt, nx, ny, self.hidden_dim])
-        out_crnn_i_1 = tf.zeros([nb, nt, nx, ny, self.hidden_dim])
-        out_crnn_i_2 = tf.zeros([nb, nt, nx, ny, self.hidden_dim])
-        out_crnn_i_3 = tf.zeros([nb, nt, nx, ny, self.hidden_dim])
+        out_crnn_t_i = tf.repeat(tf.zeros_like(img[..., :1]), axis=-1, repeats=self.hidden_dim)
+        out_crnn_i_1 = tf.repeat(tf.zeros_like(img[..., :1]), axis=-1, repeats=self.hidden_dim)
+        out_crnn_i_2 = tf.repeat(tf.zeros_like(img[..., :1]), axis=-1, repeats=self.hidden_dim)
+        out_crnn_i_3 = tf.repeat(tf.zeros_like(img[..., :1]), axis=-1, repeats=self.hidden_dim)
 
         for i in range(self.iteration):
             out_crnn_t_i = self.crnn_t_i([img, out_crnn_t_i])
