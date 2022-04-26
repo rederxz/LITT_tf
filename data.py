@@ -114,52 +114,17 @@ def mask_ds_from_gen(gen):
     return mask_ds
 
 
-def prepare(ds_img,
-            ds_mask,
+def prepare(ds,
             batch_size=1,
             transform=None,
             shuffle=False):
-    if shuffle:
-        ds_img = ds_img.shuffle(len(ds_img), reshuffle_each_iteration=True)  # a large enough buffer size is required
-
-    ds = tf.data.Dataset.zip((ds_img, ds_mask))
 
     if transform:
-        ds = ds.map(lambda img, mask: transform(img, mask), num_parallel_calls=tf.data.AUTOTUNE)
+        ds = ds.map(lambda *x: transform(x), num_parallel_calls=tf.data.AUTOTUNE)
+
+    if shuffle:
+        ds = ds.shuffle(len(ds), reshuffle_each_iteration=True)  # a large enough buffer size is required
 
     ds = ds.batch(batch_size)
 
     return ds.prefetch(buffer_size=tf.data.AUTOTUNE)
-
-# def make_LITT_dataset(data_dir,
-#                       split,
-#                       nt_network=1,
-#                       overlap=False,
-#                       nt_wait=0,
-#                       batch_size=1,
-#                       shuffle=False,
-#                       transform=None
-#                       ):
-#     # read original images and create a dataset
-#     data_root = pathlib.Path(data_dir)
-#     base_dir = (pathlib.Path(__file__).parent.absolute() / pathlib.Path(split)).resolve()
-#     mat_file_path = sorted([data_root/(x.name + '.mat') for x in base_dir.iterdir()])
-#     ds = LITT(mat_file_path, nt_network, overlap, nt_wait)
-#
-#     # preprocessing (data augmentation, under-sampling ...)
-#     ds = prepare(ds, batch_size, transform, shuffle)
-#
-#     return ds
-
-
-# def prepare(ds, batch_size=1, transform=None, shuffle=False):
-#
-#     if transform:
-#         ds = ds.map(lambda img: transform(img), num_parallel_calls=tf.data.AUTOTUNE)
-#
-#     if shuffle:
-#         ds = ds.shuffle(len(ds))  # a large enough buffer size is required
-#
-#     ds = ds.batch(batch_size)
-#
-#     return ds.prefetch(buffer_size=tf.data.AUTOTUNE)
