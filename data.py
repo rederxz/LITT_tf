@@ -114,6 +114,18 @@ def mask_ds_from_gen(gen):
     return mask_ds
 
 
+def get_litt_ds(img_dir,
+                split_dir,
+                nt_network,
+                mask_dir=None,
+                ):
+    ds = img_ds_from_file(data_dir=img_dir, split_dir=split_dir, nt_network=nt_network)
+    if mask_dir:
+        ds_mask = mask_ds_from_file(data_dir=mask_dir, split_dir=split_dir, nt_network=nt_network)
+        ds = tf.data.Dataset.zip((ds, ds_mask))
+    return ds
+
+
 def prepare(ds,
             batch_size=1,
             transform=None,

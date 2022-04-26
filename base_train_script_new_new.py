@@ -7,7 +7,7 @@ from tensorflow.keras.optimizers import Adam
 from tensorflow.keras.optimizers.schedules import CosineDecay
 from toolz import curry
 
-from data import cut_edge, under_sample, img_ds_from_file, mask_ds_from_file, prepare
+from data import cut_edge, under_sample, get_litt_ds, prepare
 from mask import cs_mask_tf
 from model import CRNN
 from utils import setup_tpu, l2_loss, psnr, ssim, c2r
@@ -35,13 +35,10 @@ epochs = 200
 
 tpu = setup_tpu()
 
-ds_img_train = img_ds_from_file(data_dir='LITT_data', split_dir='data_small/train', nt_network=nt_network)
+ds_img_train = get_litt_ds('LITT_data', 'data_small/train', nt_network)
 ds_train = prepare(ds_img_train, batch_size=train_batch_size, transform=transform(training=True), shuffle=True)
-
-ds_img_test = img_ds_from_file(data_dir='LITT_data', split_dir='data_small/test', nt_network=nt_network)
-ds_mask_test = mask_ds_from_file(data_dir='LITT_mask_8x_c8', split_dir='data_small/test', nt_network=nt_network)
-ds_test = tf.data.Dataset.zip(ds_img_test, ds_mask_test)
-ds_test = prepare(ds_test, batch_size=test_batch_size, transform=transform(training=False))
+ds_test = get_litt_ds('LITT_data', 'data_small/test', nt_network, mask_dir='LITT_mask_8x_c8')
+ds_test = prepare(ds_test, batch_size=8, transform=transform(training=False))
 
 with tpu.scope():
     model = CRNN()
