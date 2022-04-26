@@ -27,10 +27,11 @@ def transform(data, training):
     return (img_u, k_u, mask), img
 
 
+replicas = 8
 nt_network = 6
-train_batch_size = 1
-test_batch_size = 8
-base_lr = 0.0001
+train_batch_size = 1 * replicas
+test_batch_size = 1 * replicas
+base_lr = 0.0001 * replicas
 epochs = 200
 
 tpu = setup_tpu()
@@ -38,7 +39,7 @@ tpu = setup_tpu()
 ds_img_train = get_litt_ds('LITT_data', 'data_small/train', nt_network)
 ds_train = prepare(ds_img_train, batch_size=train_batch_size, transform=transform(training=True), shuffle=True)
 ds_test = get_litt_ds('LITT_data', 'data_small/test', nt_network, mask_dir='LITT_mask_8x_c8')
-ds_test = prepare(ds_test, batch_size=8, transform=transform(training=False))
+ds_test = prepare(ds_test, batch_size=test_batch_size, transform=transform(training=False))
 
 with tpu.scope():
     model = CRNN()

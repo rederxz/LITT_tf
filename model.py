@@ -2,7 +2,7 @@ import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Layer, Conv2D, ReLU
 
-from utils import c2r, r2c
+from utils import c2r, r2c, Learner
 
 
 class DC(Layer):
@@ -122,7 +122,7 @@ class CRNN_i(Layer):
         return output
 
 
-class CRNN(Model):
+class CRNN(Learner):
     def __init__(self,
                  hidden_dim=64,
                  kernel_size=3,
