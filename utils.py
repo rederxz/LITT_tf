@@ -44,7 +44,6 @@ def ssim(img_1, img_2, complex_input=False):
         img_1, img_2 = r2c(img_1), r2c(img_2)
     img_1 = tf.transpose(img_1, [1, 0, 2, 3])
     img_2 = tf.transpose(img_2, [1, 0, 2, 3])
-    print(img_1.shape)
     mean_ssim = tf.reduce_mean([tf.image.ssim(tf.math.abs(img_1[i]), tf.math.abs(img_2[i]), max_val=1.0) for i in range(img_1.shape[0])])
     return mean_ssim
 
@@ -52,9 +51,10 @@ def ssim(img_1, img_2, complex_input=False):
 class Learner(Model):
     def train_step(self, data):
         # unpack data
-        img, img_u, k_u, mask = data
+        img_u, k_u, mask = data[0]
+        img = data[1]
         with tf.GradientTape() as tape:
-            img_pred = self(img_u, k_u, mask, training=True)  # Forward pass
+            img_pred = self([img_u, k_u, mask], training=True)  # Forward pass
             # Compute the loss value
             loss = self.compiled_loss(img, img_pred, regularization_losses=self.losses)
         # Compute gradients
@@ -67,9 +67,10 @@ class Learner(Model):
 
     def test_step(self, data):
         # unpack data
-        img, img_u, k_u, mask = data
+        img_u, k_u, mask = data[0]
+        img = data[1]
         # forward pass
-        img_pred = self(img_u, k_u, mask, training=False)
+        img_pred = self([img_u, k_u, mask], training=False)
         # Update metrics
         self.compiled_loss(img, img_pred, regularization_losses=self.losses)
         self.compiled_metrics.update_state(img, img_pred)
